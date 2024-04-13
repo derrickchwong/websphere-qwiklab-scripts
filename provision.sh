@@ -102,6 +102,16 @@ gcloud compute firewall-rules create allow-was \
     --source-ranges=0.0.0.0/0 \
     --target-tags=was
 
+
+echo "Creating firewall rule for Oracle..."
+
+gcloud compute firewall-rules create allow-oracle \
+    --direction=INGRESS \
+    --action=ALLOW \
+    --rules=tcp:1521 \
+    --source-ranges=0.0.0.0/0 \
+    --target-tags=oracle
+
 # Check if WAS Cafe image imported successfully
 while true; do
   IMAGE_STATUS=$(gcloud compute images describe was-cafe --format="value(status)")
@@ -129,6 +139,7 @@ while true; do
         --image=oracle-db \
         --zone=$ZONE \
         --machine-type=e2-medium \
+        --tags=oracle \
         --async
     break
   else
