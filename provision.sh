@@ -157,7 +157,9 @@ done
 while true; do
   INSTANCE_STATUS=$(gcloud compute instances describe was-cafe --format="value(status)" --zone=$ZONE)
   if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
-    echo "WAS instance is ready."
+    echo "WAS instance is ready. Starting WAS..."
+    gcloud compute ssh was-cafe --zone=$ZONE --command "sudo /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/startServer.sh server1"
+    echo "WAS started"
     EXTERNAL_IP=$(gcloud compute instances describe was-cafe --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
     echo "Access WAS instance at http://${EXTERNAL_IP}:9080/websphere-cafe"
     break
