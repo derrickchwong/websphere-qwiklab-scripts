@@ -159,7 +159,7 @@ while true; do
   if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
     echo "WAS instance is ready."
     EXTERNAL_IP=$(gcloud compute instances describe was-cafe --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-    echo "\nAccess WAS instance at http://${EXTERNAL_IP}:9080/websphere-cafe"
+    echo "Access WAS instance at http://${EXTERNAL_IP}:9080/websphere-cafe"
     break
   else
     echo "Waiting for WAS instance to be ready..."
