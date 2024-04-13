@@ -91,7 +91,7 @@ gcloud beta alloydb clusters create alloydb1 \
 echo "Creating AlloyDB primary instance..."
 
 gcloud beta alloydb instances create primary --cluster=alloydb1 --region=$REGION \
-    --instance-type=PRIMARY --cpu-count=2 --async
+    --instance-type=PRIMARY --cpu-count=2 --ssl-mode=ALLOW_UNENCRYPTED_AND_ENCRYPTED --async
 
 echo "Creating firewall rule for WAS..."
 
