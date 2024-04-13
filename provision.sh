@@ -36,6 +36,7 @@ echo "Importing Oracle DB image..."
 gcloud compute images import oracle-db \
     --source-file=gs://derrickwong-storage/oracle-db.vmdk \
     --guest-environment \
+    --zone=$ZONE \
     --async
 
 echo "Importing WAS Cafe image..."
@@ -43,6 +44,7 @@ echo "Importing WAS Cafe image..."
 gcloud compute images import was-cafe \
     --source-file=gs://derrickwong-storage/was-cafe.vmdk \
     --guest-environment \
+    --zone=$ZONE \
     --async
 
 echo "Creating GKE Autopilot cluster..."
@@ -141,6 +143,8 @@ while true; do
   INSTANCE_STATUS=$(gcloud compute instances describe oracle-db --format="value(status)" --zone=$ZONE)
   if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
     echo "Oracle DB instance is ready."
+    mkdir ~/.ssh
+    ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $(whoami)@cs-$PROJECT_NUMBER-default -b 2048 -q -N ""
     gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl daemon-reload && sudo systemctl enable oracle-xe-21c && sudo systemctl start oracle-xe-21c"
     break
   else
