@@ -62,7 +62,7 @@ echo "Creating Artifact Registry repository..."
 
 gcloud artifacts repositories create container \
     --repository-format=docker \
-    --location=us-central1 \
+    --location=$REGION \
     --description="Container repository"
 
 echo "Creating default IP range..."
@@ -229,7 +229,7 @@ gcloud compute instances create bastion \
     --zone=$ZONE \
     --image-family=debian-11 \
     --image-project=debian-cloud \
-    --network-interface subnet=dms-psc-us-central1,no-address \
+    --network-interface subnet=dms-psc-$REGION,no-address \
     --network-interface subnet=default,no-address \
     --metadata=alloydb-ip=$ALLOYDB_IP,gateway=$GATEWAY,startup-script='#! /bin/bash
 
