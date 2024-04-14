@@ -179,3 +179,170 @@ while true; do
     sleep 10
   fi
 done
+
+
+echo "Creating the VPC network for the Database Migration Service Private Service Connect."
+gcloud compute networks create dms-psc-vpc \
+--project=$PROJECT_ID \
+--subnet-mode=custom
+
+echo "Creating a subnet for the Database Migration Service Private Service Connect."
+gcloud compute networks subnets create dms-psc-$REGION \
+--project=$PROJECT_ID \
+--range=10.0.0.0/16 --network=dms-psc-vpc \
+--region=$REGION
+
+echo "Creating a router required for the bastion to be able to install external"
+# packages (for example, Dante SOCKS server):
+gcloud compute routers create ex-router-$REGION \
+--network dms-psc-vpc \
+--project=$PROJECT_ID \
+--region=$REGION
+
+echo "Creating a NAT gateway for the bastion VM."
+gcloud compute routers nats create ex-nat-$REGION \
+--router=ex-router-$REGION \
+--auto-allocate-nat-external-ips \
+--nat-all-subnet-ip-ranges \
+--enable-logging \
+--project=$PROJECT_ID \
+--region=$REGION
+
+export ALLOYDB_IP=$(gcloud alloydb instances describe primary \
+--cluster=alloydb1
+--project=$PROJECT_ID \
+--region=$REGION \
+--format="value(ipAddress))"
+
+echo "AlloyDB IP: $ALLOYDB_IP"
+
+export GATEWAY=$(gcloud compute networks subnets describe default \
+--project=$PROJECT_ID \
+--region=$REGION  \
+--format="value(gatewayAddress))"
+
+echo "Gateway: $GATEWAY"
+
+echo "Creating the bastion VM."
+gcloud compute instances create bastion \
+    --project=$PROJECT_ID \
+    --zone=$ZONE \
+    --image-family=debian-11 \
+    --image-project=debian-cloud \
+    --network-interface subnet=dms-psc-us-central1,no-address \
+    --network-interface subnet=default,no-address \
+    --metadata=alloydb-ip=$APPLYDB_IP \
+    --metadata=gateway= \
+    --metadata=startup-script='#! /bin/bash
+
+# curl the gce metadata server to get the AlloyDB IP address from metadata and assign to variable ALLOYDB_IP
+export ALLOYDB_IP=$(curl -H "Metadata-Flavor: Google" \
+http://metadata.google.internal/computeMetadata/v1/instance/attributes/alloydb-ip)
+
+# curl the gce metadata server to get the Gateway IP from metadata and assign to variable GATEWAY
+export GATEWAY=$(curl -H "Metadata-Flavor: Google" \
+http://metadata.google.internal/computeMetadata/v1/instance/attributes/gateway)
+
+ip route add $ALLOYDB_IP via $GATEWAY
+
+# Install Dante SOCKS server.
+apt-get install -y dante-server
+
+# Create the Dante configuration file.
+touch /etc/danted.conf
+
+# Create a proxy.log file.
+touch proxy.log
+
+# Add the following configuration for Dante:
+cat > /etc/danted.conf << EOF
+logoutput: /proxy.log
+user.privileged: proxy
+user.unprivileged: nobody
+
+internal: 0.0.0.0 port = 5432
+external: ens5
+
+clientmethod: none
+socksmethod: none
+
+client pass {
+        from: 0.0.0.0/0
+        to: 0.0.0.0/0
+        log: connect error disconnect
+}
+client block {
+        from: 0.0.0.0/0
+        to: 0.0.0.0/0
+        log: connect error
+}
+socks pass {
+        from: 0.0.0.0/0
+        to: 10.23.17.2/32
+        protocol: tcp
+        log: connect error disconnect
+}
+socks block {
+        from: 0.0.0.0/0
+        to: 0.0.0.0/0
+        log: connect error
+}
+EOF
+
+# Start the Dante server.
+systemctl restart danted
+
+tail -f proxy.log'
+
+echo "Creating the target instance from the created bastion VM."
+gcloud compute target-instances create bastion-ti-$REGION \
+--instance=bastion \
+--project=$PROJECT_ID \
+--instance-zone=$ZONE \
+--network=dms-psc-vpc
+
+echo "Creating a forwarding rule for the backend service."
+gcloud compute forwarding-rules create dms-psc-forwarder-$REGION \
+--project=$PROJECT_ID \
+--region=$REGION \
+--load-balancing-scheme=internal \
+--network=dms-psc-vpc \
+--subnet=dms-psc-$REGION \
+--ip-protocol=TCP \
+--ports=all \
+--target-instance=bastion-ti-$REGION \
+--target-instance-zone=$ZONE
+
+echo "Creating a TCP NAT subnet."
+gcloud compute networks subnets create dms-psc-nat-$REGION-tcp \
+--network=dms-psc-vpc \
+--project=$PROJECT_ID \
+--region=$REGION \
+--range=10.1.0.0/16 \
+--purpose=private-service-connect
+
+echo "Creating a service attachment."
+gcloud compute service-attachments create dms-psc-svc-att-$REGION \
+--project=$PROJECT_ID \
+--region=$REGION \
+--producer-forwarding-rule=dms-psc-forwarder-$REGION \
+--connection-preference=ACCEPT_MANUAL \
+--nat-subnets=dms-psc-nat-$REGION-tcp
+
+echo "Creating a firewall rule allowing the Private Service Connect NAT subnet."
+# access the Private Service Connect subnet
+gcloud compute \
+--project=$PROJECT_ID firewall-rules create dms-allow-psc-tcp \
+--direction=INGRESS \
+--priority=1000 \
+--network=dms-psc-vpc \
+--action=ALLOW \
+--rules=all \
+--source-ranges=10.1.0.0/16 \
+--enable-logging
+
+# Print out the created service attachment.
+gcloud compute service-attachments describe dms-psc-svc-att-$REGION \
+--project=$PROJECT_ID \
+--region=$REGION
+
