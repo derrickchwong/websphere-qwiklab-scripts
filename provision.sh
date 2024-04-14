@@ -156,6 +156,7 @@ while true; do
     echo "Oracle DB instance is ready."
     mkdir ~/.ssh
     ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $(whoami)@cs-$PROJECT_NUMBER-default -b 2048 -q -N ""
+    sleep 15
     gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl daemon-reload && sudo systemctl enable oracle-xe-21c && sudo systemctl start oracle-xe-21c"
     break
   else
@@ -169,6 +170,7 @@ while true; do
   INSTANCE_STATUS=$(gcloud compute instances describe was-cafe --format="value(status)" --zone=$ZONE)
   if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
     echo "WAS instance is ready. Starting WAS..."
+    sleep 15
     gcloud compute ssh was-cafe --zone=$ZONE --command "sudo /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/startServer.sh server1"
     echo "WAS started"
     EXTERNAL_IP=$(gcloud compute instances describe was-cafe --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
