@@ -209,17 +209,17 @@ gcloud compute routers nats create ex-nat-$REGION \
 --region=$REGION
 
 export ALLOYDB_IP=$(gcloud alloydb instances describe primary \
---cluster=alloydb1
+--cluster=alloydb1 \
 --project=$PROJECT_ID \
 --region=$REGION \
---format="value(ipAddress))"
+--format='value(ipAddress)')
 
-echo "AlloyDB IP: $ALLOYDB_IP"
+echo "AlloyDB IP: "$ALLOYDB_IP
 
 export GATEWAY=$(gcloud compute networks subnets describe default \
 --project=$PROJECT_ID \
 --region=$REGION  \
---format="value(gatewayAddress))"
+--format="value(gatewayAddress)")
 
 echo "Gateway: $GATEWAY"
 
@@ -231,9 +231,7 @@ gcloud compute instances create bastion \
     --image-project=debian-cloud \
     --network-interface subnet=dms-psc-us-central1,no-address \
     --network-interface subnet=default,no-address \
-    --metadata=alloydb-ip=$APPLYDB_IP \
-    --metadata=gateway= \
-    --metadata=startup-script='#! /bin/bash
+    --metadata=alloydb-ip=$ALLOYDB_IP,gateway=$GATEWAY,startup-script='#! /bin/bash
 
 # curl the gce metadata server to get the AlloyDB IP address from metadata and assign to variable ALLOYDB_IP
 export ALLOYDB_IP=$(curl -H "Metadata-Flavor: Google" \
