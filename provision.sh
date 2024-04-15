@@ -278,7 +278,7 @@ client block {
 }
 socks pass {
         from: 0.0.0.0/0
-        to: 10.23.17.2/32
+        to: $ALLOYDB_IP/32
         protocol: tcp
         log: connect error disconnect
 }
