@@ -21,8 +21,8 @@ gcloud services enable \
 echo "Creating workstation cluster"
 gcloud workstations clusters create workstation-cluster \
 --region=$REGION \
---network=default \
---subnetwork=default \
+--network "projects/${PROJECT_ID}/global/networks/default" \
+--subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
 --async
 
 echo "Adding service account to project IAM policy..."
