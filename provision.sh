@@ -112,7 +112,7 @@ gcloud compute firewall-rules create allow-oracle \
     --source-ranges=0.0.0.0/0 \
     --target-tags=oracle
 
-
+# ---------
 
 echo "Creating the VPC network for the Database Migration Service Private Service Connect."
 gcloud compute networks create dms-psc-vpc \
@@ -141,11 +141,20 @@ gcloud compute routers nats create ex-nat-$REGION \
 --project=$PROJECT_ID \
 --region=$REGION
 
-export ALLOYDB_IP=$(gcloud alloydb instances describe primary \
---cluster=alloydb1 \
---project=$PROJECT_ID \
---region=$REGION \
---format='value(ipAddress)')
+
+while true; do
+  ALLOYDB_IP=$(gcloud alloydb instances describe primary \
+    --cluster=alloydb1 \
+    --project=$PROJECT_ID \
+    --region=$REGION \
+    --format='value(ipAddress)')
+  if [[ -z "$ALLOYDB_IP" ]]; then
+    echo "Waiting for AlloyDB primary instance to be ready..."
+    sleep 10
+  else
+    break
+  fi
+done
 
 echo "AlloyDB IP: "$ALLOYDB_IP
 
@@ -277,7 +286,7 @@ gcloud compute service-attachments describe dms-psc-svc-att-$REGION \
 --project=$PROJECT_ID \
 --region=$REGION
 
-
+# ---------
 
 # Check if WAS Cafe image imported successfully
 while true; do
