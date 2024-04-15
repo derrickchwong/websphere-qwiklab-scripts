@@ -5,6 +5,12 @@ export PROJECT_NUMBER=$(gcloud projects describe $PROJECT_ID --format="value(pro
 export REGION=us-central1
 export ZONE=us-central1-a
 
+echo "PROJECT_ID: $PROJECT_ID"
+echo "PROJECT_NUMBER: $PROJECT_NUMBER"
+echo "REGION: $REGION"
+echo "ZONE: $ZONE"
+
+
 echo "Enabling required services..."
 
 gcloud services enable \
