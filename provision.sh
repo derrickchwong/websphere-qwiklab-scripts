@@ -112,75 +112,6 @@ gcloud compute firewall-rules create allow-oracle \
     --source-ranges=0.0.0.0/0 \
     --target-tags=oracle
 
-# Check if WAS Cafe image imported successfully
-while true; do
-  IMAGE_STATUS=$(gcloud compute images describe was-cafe --format="value(status)")
-  if [[ "${IMAGE_STATUS}" == "READY" ]]; then
-    echo "WAS Cafe image imported successfully."
-    gcloud compute instances create was-cafe \
-        --image=was-cafe \
-        --zone=$ZONE \
-        --machine-type=e2-medium \
-        --tags=was \
-        --async
-    break
-  else
-    echo "Waiting for WAS Cafe image to import..."
-    sleep 10
-  fi
-done
-
-# Check if Oracle DB image imported successfully
-while true; do
-  IMAGE_STATUS=$(gcloud compute images describe oracle-db --format="value(status)")
-  if [[ "${IMAGE_STATUS}" == "READY" ]]; then
-    echo "Oracle DB image imported successfully."
-    gcloud compute instances create oracle-db \
-        --image=oracle-db \
-        --zone=$ZONE \
-        --machine-type=e2-medium \
-        --tags=oracle \
-        --async
-    break
-  else
-    echo "Waiting for Oracle DB image to import..."
-    sleep 10
-  fi
-done
-
-
-# Check if Oracle DB instance is ready
-while true; do
-  INSTANCE_STATUS=$(gcloud compute instances describe oracle-db --format="value(status)" --zone=$ZONE)
-  if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
-    echo "Oracle DB instance is ready."
-    mkdir ~/.ssh
-    ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $(whoami)@cs-$PROJECT_NUMBER-default -b 2048 -q -N ""
-    sleep 15
-    gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl daemon-reload && sudo systemctl enable oracle-xe-21c && sudo systemctl start oracle-xe-21c"
-    break
-  else
-    echo "Waiting for Oracle DB instance to be ready..."
-    sleep 10
-  fi
-done
-
-# Check if WAS instance is ready
-while true; do
-  INSTANCE_STATUS=$(gcloud compute instances describe was-cafe --format="value(status)" --zone=$ZONE)
-  if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
-    echo "WAS instance is ready. Starting WAS..."
-    sleep 15
-    gcloud compute ssh was-cafe --zone=$ZONE --command "sudo /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/startServer.sh server1"
-    echo "WAS started"
-    EXTERNAL_IP=$(gcloud compute instances describe was-cafe --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
-    echo "Access WAS instance at http://${EXTERNAL_IP}:9080/websphere-cafe"
-    break
-  else
-    echo "Waiting for WAS instance to be ready..."
-    sleep 10
-  fi
-done
 
 
 echo "Creating the VPC network for the Database Migration Service Private Service Connect."
@@ -346,3 +277,74 @@ gcloud compute service-attachments describe dms-psc-svc-att-$REGION \
 --project=$PROJECT_ID \
 --region=$REGION
 
+
+
+# Check if WAS Cafe image imported successfully
+while true; do
+  IMAGE_STATUS=$(gcloud compute images describe was-cafe --format="value(status)")
+  if [[ "${IMAGE_STATUS}" == "READY" ]]; then
+    echo "WAS Cafe image imported successfully."
+    gcloud compute instances create was-cafe \
+        --image=was-cafe \
+        --zone=$ZONE \
+        --machine-type=e2-medium \
+        --tags=was \
+        --async
+    break
+  else
+    echo "Waiting for WAS Cafe image to import..."
+    sleep 10
+  fi
+done
+
+# Check if Oracle DB image imported successfully
+while true; do
+  IMAGE_STATUS=$(gcloud compute images describe oracle-db --format="value(status)")
+  if [[ "${IMAGE_STATUS}" == "READY" ]]; then
+    echo "Oracle DB image imported successfully."
+    gcloud compute instances create oracle-db \
+        --image=oracle-db \
+        --zone=$ZONE \
+        --machine-type=e2-medium \
+        --tags=oracle \
+        --async
+    break
+  else
+    echo "Waiting for Oracle DB image to import..."
+    sleep 10
+  fi
+done
+
+
+# Check if Oracle DB instance is ready
+while true; do
+  INSTANCE_STATUS=$(gcloud compute instances describe oracle-db --format="value(status)" --zone=$ZONE)
+  if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
+    echo "Oracle DB instance is ready."
+    mkdir ~/.ssh
+    ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $(whoami)@cs-$PROJECT_NUMBER-default -b 2048 -q -N ""
+    sleep 15
+    gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl daemon-reload && sudo systemctl enable oracle-xe-21c && sudo systemctl start oracle-xe-21c"
+    break
+  else
+    echo "Waiting for Oracle DB instance to be ready..."
+    sleep 10
+  fi
+done
+
+# Check if WAS instance is ready
+while true; do
+  INSTANCE_STATUS=$(gcloud compute instances describe was-cafe --format="value(status)" --zone=$ZONE)
+  if [[ "${INSTANCE_STATUS}" == "RUNNING" ]]; then
+    echo "WAS instance is ready. Starting WAS..."
+    sleep 15
+    gcloud compute ssh was-cafe --zone=$ZONE --command "sudo /opt/IBM/WebSphere/AppServer/profiles/AppSrv01/bin/startServer.sh server1"
+    echo "WAS started"
+    EXTERNAL_IP=$(gcloud compute instances describe was-cafe --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    echo "Access WAS instance at http://${EXTERNAL_IP}:9080/websphere-cafe"
+    break
+  else
+    echo "Waiting for WAS instance to be ready..."
+    sleep 10
+  fi
+done
