@@ -15,7 +15,15 @@ gcloud services enable \
   alloydb.googleapis.com \
   datamigration.googleapis.com \
   servicenetworking.googleapis.com \
+  workstations.googleapis.com \
   --project=$PROJECT_ID
+
+echo "Creating workstation cluster"
+gcloud workstations clusters create workstation-cluster \
+--region=$REGION \
+--network=default \
+--subnetwork=default \
+--async
 
 echo "Adding service account to project IAM policy..."
 
@@ -357,3 +365,10 @@ while true; do
     sleep 10
   fi
 done
+
+echo "Creating workstation config"
+gcloud workstations configs create workstation-config \
+--cluster=workstation-cluster \
+--machine-type=e2-standard-4 \
+--pool-size=1 \
+--region=$REGION
