@@ -18,13 +18,6 @@ gcloud services enable \
   workstations.googleapis.com \
   --project=$PROJECT_ID
 
-echo "Creating workstation cluster"
-gcloud workstations clusters create workstation-cluster \
---region=$REGION \
---network "projects/${PROJECT_ID}/global/networks/default" \
---subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
---async
-
 echo "Adding service account to project IAM policy..."
 
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
@@ -38,6 +31,13 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
 gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role=roles/iam.serviceAccountTokenCreator
+
+echo "Creating workstation cluster"
+gcloud workstations clusters create workstation-cluster \
+--region=$REGION \
+--network "projects/${PROJECT_ID}/global/networks/default" \
+--subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
+--async
 
 echo "Importing Oracle DB image..."
 
