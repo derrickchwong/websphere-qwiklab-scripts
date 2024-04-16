@@ -38,13 +38,12 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role=roles/iam.serviceAccountTokenCreator
 
-echo "Creating workstation cluster"
-# TODO This may fail, need to retry
-gcloud workstations clusters create workstation-cluster \
---region=$REGION \
---network "projects/${PROJECT_ID}/global/networks/default" \
---subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
---async
+# echo "Creating workstation cluster"
+# gcloud workstations clusters create workstation-cluster \
+# --region=$REGION \
+# --network "projects/${PROJECT_ID}/global/networks/default" \
+# --subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
+# --async
 
 echo "Importing Oracle DB image..."
 
@@ -373,9 +372,10 @@ while true; do
   fi
 done
 
-echo "Creating workstation config"
-gcloud workstations configs create workstation-config \
---cluster=workstation-cluster \
---machine-type=e2-standard-4 \
---pool-size=1 \
---region=$REGION
+# echo "Creating workstation config"
+# gcloud workstations configs create workstation-config \
+# --cluster=workstation-cluster \
+# --region=$REGION \
+# --machine-type=e2-standard-4 \
+# --pool-size=1
+
