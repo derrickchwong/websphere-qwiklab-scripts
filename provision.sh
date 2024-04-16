@@ -39,6 +39,7 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --role=roles/iam.serviceAccountTokenCreator
 
 echo "Creating workstation cluster"
+# TODO This may fail, need to retry
 gcloud workstations clusters create workstation-cluster \
 --region=$REGION \
 --network "projects/${PROJECT_ID}/global/networks/default" \
