@@ -38,13 +38,6 @@ gcloud projects add-iam-policy-binding ${PROJECT_ID} \
     --member="serviceAccount:${PROJECT_NUMBER}@cloudbuild.gserviceaccount.com" \
     --role=roles/iam.serviceAccountTokenCreator
 
-# echo "Creating workstation cluster"
-# gcloud workstations clusters create workstation-cluster \
-# --region=$REGION \
-# --network "projects/${PROJECT_ID}/global/networks/default" \
-# --subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
-# --async
-
 echo "Importing Oracle DB image..."
 
 gcloud compute images import oracle-db \
@@ -60,6 +53,13 @@ gcloud compute images import was-cafe \
     --guest-environment \
     --zone=$ZONE \
     --async
+
+echo "Creating workstation cluster"
+gcloud workstations clusters create workstation-cluster \
+--region=$REGION \
+--network "projects/${PROJECT_ID}/global/networks/default" \
+--subnetwork "projects/${PROJECT_ID}/regions/${REGION}/subnetworks/default" \
+--async
 
 echo "Creating GKE Autopilot cluster..."
 
@@ -372,10 +372,21 @@ while true; do
   fi
 done
 
-# echo "Creating workstation config"
-# gcloud workstations configs create workstation-config \
-# --cluster=workstation-cluster \
-# --region=$REGION \
-# --machine-type=e2-standard-4 \
-# --pool-size=1
+echo "Creating workstation config"
+while truel do 
+  gcloud workstations configs create workstation-config \
+    --cluster=workstation-cluster \
+    --region=$REGION \
+    --machine-type=e2-standard-4 \
+    --pool-size=1
+  status=$?
+  if [[ $status -eq 0 ]]; then
+    break
+  else
+    echo "Failed to create workstation config. Retrying..."
+    sleep 10
+  fi
+done
 
+echo "Creating workstation"
+gcloud workstations create workstation --config workstation-config --cluster workstation-cluster --region=$REGION
