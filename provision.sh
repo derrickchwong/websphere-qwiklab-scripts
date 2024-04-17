@@ -373,7 +373,7 @@ while true; do
 done
 
 echo "Creating workstation config"
-while truel do 
+while true; do 
   gcloud workstations configs create workstation-config \
     --cluster=workstation-cluster \
     --region=$REGION \
