@@ -347,7 +347,7 @@ while true; do
     mkdir ~/.ssh
     ssh-keygen -t rsa -f ~/.ssh/google_compute_engine -C $(whoami)@cs-$PROJECT_NUMBER-default -b 2048 -q -N ""
     gcloud compute config-ssh
-    gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl daemon-reload && sudo systemctl enable oracle-xe-21c && sudo systemctl start oracle-xe-21c"
+    gcloud compute ssh oracle-db --zone=$ZONE --command "sudo sed -i -e 's/ oracle-db / oracle-db.us-central1-a.c.m2c-demo.internal oracle-db /g' /etc/hosts && sudo systemctl stop oracle-xe-21c && sudo systemctl start oracle-xe-21c"
     break
   else
     echo "Waiting for Oracle DB instance to be ready..."
